@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ChatGPT Clone</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="chat-container">
+    <h1>💬 ChatGPT Clone</h1>
+    <div id="chat-window" class="chat-window"></div>
+    <div class="input-area">
+      <input id="user-input" type="text" placeholder="Type your message..." />
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+
+  <script>
+    async function sendMessage() {
+      const input = document.getElementById("user-input");
+      const chatWindow = document.getElementById("chat-window");
+      const message = input.value.trim();
+      if (!message) return;
+
+      chatWindow.innerHTML += `<div class="user-msg"><strong>You:</strong> ${message}</div>`;
+      input.value = "";
+
+      const res = await fetch("/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message }),
+      });
+      const data = await res.json();
+      chatWindow.innerHTML += `<div class="bot-msg"><strong>GPT:</strong> ${data.response}</div>`;
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+  </script>
+</body>
+</html>
