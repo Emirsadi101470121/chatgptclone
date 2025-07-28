@@ -1,35 +1,36 @@
+from flask import Flask, render_template, request, jsonify
 import requests
 import os
 
-api_key = os.getenv("MIMO_OPENAI_API_KEY")
-url = "https://ai.mimo.org/v1/openai/message"
-headers = {"api-key": api_key}
+app = Flask(__name__)
 
-def send_message(user_message, thread_id):
-    body = {"message": user_message}
+API_KEY = os.getenv("MIMO_OPENAI_API_KEY")
+MIMO_URL = "https://ai.mimo.org/v1/openai/message"
+HEADERS = {"api-key": API_KEY}
+
+thread_id = None
+
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+@app.route("/send", methods=["POST"])
+def send():
+    global thread_id
+    data = request.get_json()
+    message = data.get("message")
+
+    body = {"message": message}
     if thread_id:
         body["threadId"] = thread_id
-    response = requests.post(url, headers=headers, json=body)
-    return response.json()
 
-current_thread_id = None
-print("Welcome! Type your message and press Enter to send.")
-print("Type 'exit' to end the program")
-print("Type 'new' to switch conversation thread.")
-print("Starting a new thread for you.\n")
-threads = ([])
-while True:
-  user_message = input("You: ")
-  if user_message == "exit":
-    break
-  elif user_message.lower()=="new":
-    current_thread_id = None
-    print("Started a new thread.")
-    continue
-  response_data = send_message(user_message, current_thread_id)
-  latest_message = response_data.get("response")
-  current_thread_id = response_data.get("threadId")
-  threads.append(current_thread_id)
-  print(f"GPT: {latest_message}")
+    try:
+        response = requests.post(MIMO_URL, headers=HEADERS, json=body)
+        json_data = response.json()
+        thread_id = json_data.get("threadId")
+        return jsonify({"response": json_data.get("response")})
+    except Exception as e:
+        return jsonify({"response": f"❌ Error: {str(e)}"}), 500
 
-
+if __name__ == "__main__":
+    app.run(debug=True)
